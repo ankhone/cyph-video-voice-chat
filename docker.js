@@ -7,20 +7,6 @@ const fs			= require('fs');
 const os			= require('os');
 const path			= require('path');
 
-const cat			= f => {
-	try {
-		return fs.readFileSync(f).toString().trim();
-	}
-	catch (_) {
-		return '';
-	}
-};
-
-const exec			= command => childProcess.execSync(
-	command,
-	{cwd: __dirname}
-).toString().trim();
-
 const spawn			= (command, args, cwd) => (
 	childProcess.spawnSync(
 		command,
@@ -72,15 +58,11 @@ const shellCommandArgs		= baseShellCommandArgs.
 ;
 
 const isWindows				= process.platform === 'win32';
-const homeDir				= os.homedir();
-const backupDir				= path.join(homeDir, '.cyphbackup');
-const backupTargets			= ['gitconfig', 'gnupg', 'ssh'];
-const dockerHomeDir			= '/home/gibson';
 const agseRemoteAddress		= '10.0.0.42';
 const agseLocalAddress		= '10.0.0.43';
-const agseRemoteMAC			= cat(path.join(homeDir, '.cyph', 'agse.remote.mac'));
-const agseLocalInterface	= cat(path.join(homeDir, '.cyph', 'agse.local.interface'));
-const agseTempFile			= path.join(os.tmpdir(), 'balls');
+const agseRemoteMAC			= '';
+const agseLocalInterface	= '';
+const agseTempFile			= '';
 const commandAdditionalArgs	= [];
 
 const commandScript			=
@@ -91,16 +73,7 @@ const commandScript			=
 			undefined
 ;
 
-const isAgseDeploy			=
-	(
-		args.command === 'certsign' &&
-		process.argv[3] === 'cyphme'
-	) || (
-		args.command === 'deploy' &&
-		!args.simple &&
-		(!args.site || args.site === 'cyph.ws')
-	)
-;
+const isAgseDeploy			= false;
 
 const image					= 'cyph/' + (
 	spawn('git', ['describe', '--tags', '--exact-match']) ||
@@ -111,11 +84,7 @@ const image					= 'cyph/' + (
 ).toLowerCase();
 
 const mounts				= [
-	`${__dirname}:/cyph`,
-	`${path.join(homeDir, '.cyph')}:${dockerHomeDir}/.cyph`,
-	`${path.join(homeDir, '.gitconfig')}:${dockerHomeDir}/.gitconfig`,
-	`${path.join(homeDir, '.gnupg')}:${dockerHomeDir}/.gnupg.original`,
-	`${path.join(homeDir, '.ssh')}:${dockerHomeDir}/.ssh`
+	`${__dirname}:/cyph`
 ].map(
 	s => ['-v', s]
 ).reduce(
@@ -225,36 +194,7 @@ const shellScripts			= {
 };
 
 
-const backup			= () => {
-	if (isWindows) {
-		return;
-	}
-
-	for (const d of fs.readdirSync(backupDir).filter(d => d !== '.git')) {
-		spawn('rm', ['-rf', path.join(backupDir, d)]);
-	}
-
-	childProcess.spawnSync('git', ['init'], {cwd: backupDir});
-	try {
-		fs.mkdirSync(path.join(backupDir, 'cyph'));
-	}
-	catch (_) {}
-
-	for (const d of backupTargets) {
-		spawn('cp', ['-a', path.join(homeDir, `.${d}`), path.join(backupDir, d)]);
-	}
-
-	for (const d of fs.readdirSync(path.join(homeDir, '.cyph')).filter(d => d !== 'cdn')) {
-		spawn('cp', ['-a', path.join(homeDir, '.cyph', d), path.join(backupDir, 'cyph', d)]);
-	}
-
-	childProcess.spawnSync('git', ['add', '.'], {cwd: backupDir});
-	childProcess.spawnSync(
-		'git',
-		['commit', '--no-gpg-sign', '-a', '-m', 'backup'],
-		{cwd: backupDir}
-	);
-};
+const backup			= () => {};
 
 const containerName		= command => `${image}_${command}`.replace(/\//g, '_');
 
@@ -383,57 +323,7 @@ const removeImage		= (name, opts) => {
 };
 
 const updateCircleCI	= () => {
-	if (args.noUpdates) {
-		return Promise.resolve();
-	}
-
-	fs.writeFileSync(
-		'Dockerfile.tmp',
-		fs.readFileSync('Dockerfile').
-			toString().
-			split('\n').
-			filter(s => !s.startsWith('VOLUME')).
-			join('\n').
-			replace('WORKDIR /cyph/commands', 'WORKDIR /cyph').
-			replace(/#CIRCLECI:/g, '').
-			replace(/BASE64_FILES/, [
-				'commands/dockerpostmake.sh',
-				'commands/getlibs.sh',
-				'commands/libclone.sh',
-				'commands/updatedockerimage.sh',
-				'native/plugins.list',
-				'shared/lib/js/package.json',
-				'shared/lib/js/yarn.lock'
-			].map(filePath => fs.readFileSync(filePath).toString().
-				match(/(.|\n){1,32768}/g).
-				map(s => Buffer.from(s).toString('base64')).
-				map(base64 => `RUN echo '${base64}' | base64 --decode >> ~/getlibs/${filePath}`).
-				join('\n')
-			).join(
-				'\n'
-			))
-	);
-
-	return spawnAsync('docker', [
-		'build',
-		'-t',
-		'cyph/circleci:latest',
-		'-f',
-		'Dockerfile.tmp',
-		'.'
-	]).then(() =>
-		spawnAsync('docker', ['push', 'cyph/circleci:latest'])
-	).then(() => {
-		fs.unlinkSync('Dockerfile.tmp');
-	}).then(() => Promise.all(
-		spawn('docker', ['images', '-a']).
-			split('\n').
-			slice(1).
-			filter(s => s.indexOf('cyph/circleci') > -1).
-			map(s => spawnAsync('docker', ['rmi', s.split(/\s+/)[0]]))
-	)).then(() =>
-		spawnAsync('docker', ['system', 'prune', '-f'])
-	);
+	return Promise.resolve();
 };
 
 

@@ -150,10 +150,6 @@ RUN rm -rf ~/.gnupg
 
 
 VOLUME /cyph
-VOLUME /home/gibson/.cyph
-VOLUME /home/gibson/.gitconfig
-VOLUME /home/gibson/.gnupg.original
-VOLUME /home/gibson/.ssh
 
 WORKDIR /cyph/commands
 
