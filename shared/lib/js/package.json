@@ -226,7 +226,7 @@
 		"jquery.appear": "https://github.com/morr/jquery.appear",
 		"jsdoc": "3.5.5",
 		"jsdom": "^15.1.1",
-		"jspdf": "^1.5.3",
+		"jspdf": "^2.3.1",
 		"karma": "^4.2.0",
 		"karma-chrome-launcher": "^3.1.0",
 		"karma-cli": "^2.0.0",
