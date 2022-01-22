@@ -296,7 +296,7 @@
 		"ngx-build-plus": "^8.1.4",
 		"ngx-contextmenu": "^5.2.0",
 		"ngx-image-cropper": "^1.4.1",
-		"node-fetch": "^2.6.0",
+		"node-fetch": "^3.1.1",
 		"node-sass": "^4.12.0",
 		"nodemailer": "4",
 		"notify-cli": "^0.1.5",
